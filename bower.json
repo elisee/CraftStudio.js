@@ -1,0 +1,19 @@
+{
+  "name": "craftstudio-model-viewer",
+  "version": "0.0.0",
+  "authors": [
+    "Elisée Maurer <elisee@craftstud.io>"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "threejs": "*"
+  }
+}

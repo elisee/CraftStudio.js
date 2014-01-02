@@ -1,0 +1,169 @@
+doctype html
+html
+  head
+    meta(charset="utf-8")
+    title CraftStudio Model Viewer
+    script(src="three.js")
+    script(src="craftstudio.js")
+    style
+      :stylus
+        html, body
+          width 100%
+          height 100%
+        
+        body
+          margin 0
+          line-height 0
+          font-size 0
+
+        canvas
+          width 100%
+          height 100%
+          cursor move
+
+  body
+    script
+      :coffee
+        getQueryVariable = (variable) ->
+          query = window.location.search.substring 1
+          vars = query.split '&'
+          for i in [0...vars.length]
+            pair = vars[i].split '='
+            if decodeURIComponent(pair[0]) == variable
+              return decodeURIComponent pair[1]
+          return null
+
+        getJSON = (url, callback) ->
+          xhr = new XMLHttpRequest()
+          # xhr.responseType = 'json'
+          xhr.open 'GET', url
+          xhr.onreadystatechange = ->
+            if xhr.readyState == 4 and xhr.status == 200
+              callback JSON.parse xhr.responseText
+          xhr.send()
+          return
+
+        viewer = 
+          renderer: new THREE.WebGLRenderer()
+          camera: new THREE.PerspectiveCamera 45, 1, 1, 10000
+          scene: new THREE.Scene()
+          canvasSize: { width: 0, height: 0 }
+
+        bgColor = getQueryVariable('bgColor')
+        if bgColor?
+          viewer.renderer.setClearColor parseInt "0x#{bgColor}"
+
+        ambient = new THREE.AmbientLight 0xffffff
+        viewer.scene.add ambient
+
+        updateViewport = ->
+          canvasSize = width: viewer.renderer.domElement.clientWidth, height: viewer.renderer.domElement.clientHeight
+          
+          if canvasSize.width != viewer.canvasSize.width or canvasSize.height != viewer.canvasSize.height
+            viewer.canvasSize = canvasSize
+            viewer.renderer.setSize viewer.canvasSize.width, viewer.canvasSize.height
+            viewer.camera.aspect = viewer.canvasSize.width / viewer.canvasSize.height
+            viewer.camera.updateProjectionMatrix()
+
+          return
+
+        handleInput = ->
+          return if ! viewer.mesh?
+
+          viewer.input.lerpCamera.distance += (viewer.input.camera.distance - viewer.input.lerpCamera.distance) * 0.15
+          viewer.input.lerpCamera.angleX += (viewer.input.camera.angleX - viewer.input.lerpCamera.angleX) * 0.25
+          viewer.input.lerpCamera.angleY += (viewer.input.camera.angleY - viewer.input.lerpCamera.angleY) * 0.25
+
+          meshCenter = new THREE.Vector3().copy(viewer.mesh.geometry.boundingSphere.center).divideScalar 16.0
+          cameraOffset = new THREE.Vector3 0, 0, viewer.input.lerpCamera.distance
+          cameraOrientation = new THREE.Quaternion().setFromEuler new THREE.Euler viewer.input.lerpCamera.angleX, viewer.input.lerpCamera.angleY, 0
+          cameraOffset.applyQuaternion cameraOrientation
+
+          viewer.camera.position.addVectors meshCenter, cameraOffset
+          viewer.camera.lookAt meshCenter
+          return
+
+
+        updateAnimation = ->
+          return if ! viewer.animation?
+
+          viewer.animationFrame = (viewer.animationFrame + 1) % viewer.animation.duration
+          viewer.model.setPose viewer.animation, viewer.animationFrame
+          return
+
+        render = ->
+          requestAnimationFrame render
+
+          updateViewport()
+          handleInput()
+          updateAnimation()
+          viewer.renderer.render viewer.scene, viewer.camera
+
+        document.body.appendChild viewer.renderer.domElement
+
+        viewer.input =
+          isMouseDown: false
+          mouse: { x: 0, y: 0 }
+          camera:
+            distance: 0
+            angleY: 0
+            angleX: 0
+          lerpCamera:
+            distance: 0
+            angleY: 0
+            angleX: 0
+
+        onMouseDown = (event) ->
+          event.preventDefault()
+          viewer.input.isMouseDown = true
+          return
+
+        onMouseMove = (event) ->
+          if viewer.input.isMouseDown
+            viewer.input.camera.angleY -= THREE.Math.degToRad( (event.clientX - viewer.input.mouse.x) / 2 )
+            viewer.input.camera.angleX -= THREE.Math.degToRad(  (event.clientY - viewer.input.mouse.y) / 2 )
+            viewer.input.camera.angleX = Math.min( Math.max( viewer.input.camera.angleX, -Math.PI / 2 ), Math.PI / 2 )
+          
+          viewer.input.mouse.x = event.clientX
+          viewer.input.mouse.y = event.clientY
+          return
+
+        onMouseUp = (event) -> viewer.input.isMouseDown = false; return
+        
+        onMouseWheel = (event) ->
+          event.preventDefault()
+          viewer.input.camera.distance = Math.max( 3, viewer.input.camera.distance + ( (-event.wheelDelta / 120) or event.detail ) )
+
+        viewer.renderer.domElement.addEventListener 'contextmenu', (event) -> event.preventDefault()
+        viewer.renderer.domElement.addEventListener 'mousemove', onMouseMove
+        viewer.renderer.domElement.addEventListener 'mousedown', onMouseDown
+        document.addEventListener 'mouseup', onMouseUp
+        viewer.renderer.domElement.addEventListener 'DOMMouseScroll', onMouseWheel
+        viewer.renderer.domElement.addEventListener 'mousewheel', onMouseWheel
+
+        do render
+
+        modelPath = getQueryVariable 'model'
+        animationPath = getQueryVariable 'animation'
+
+        getJSON "#{modelPath}.csjsmodel", (modelDef) ->
+          img = new Image()
+          img.src = "#{modelPath}.png"
+          img.onload = ->
+            texture = new THREE.Texture img, undefined, undefined, undefined, THREE.NearestFilter, THREE.NearestFilter, undefined, undefined, 0
+            texture.needsUpdate = true
+            viewer.model = new CraftStudio.Model modelDef, texture
+
+            viewer.mesh = new THREE.Mesh viewer.model.geometry, viewer.model.material
+            viewer.mesh.scale.set 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0
+            viewer.scene.add viewer.mesh
+
+            viewer.mesh.geometry.computeBoundingSphere()
+            viewer.input.camera.distance = viewer.input.lerpCamera.distance = (viewer.mesh.geometry.boundingSphere.radius / 16.0) / Math.tan( THREE.Math.degToRad(viewer.camera.fov) / 2 ) * 1.2
+            viewer.camera.position.copy(viewer.mesh.geometry.boundingSphere.center).divideScalar 16.0
+            viewer.camera.position.z = viewer.input.camera.distance
+
+            if animationPath?
+              getJSON "#{animationPath}.csjsmodelanim", (modelAnimDef) ->
+                viewer.animation = new CraftStudio.ModelAnimation modelAnimDef
+                viewer.animationFrame = 0
