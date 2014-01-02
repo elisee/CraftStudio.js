@@ -54,7 +54,6 @@ html
         bgColor = getQueryVariable('bgColor')
         viewer.bgColor = parseInt "0x#{bgColor}" if bgColor?
         viewer.renderer.setClearColor viewer.bgColor
-          
 
         ambient = new THREE.AmbientLight 0xffffff
         viewer.scene.add ambient
@@ -164,8 +163,8 @@ html
 
         onMouseMove = (event) ->
           if viewer.input.isMouseDown
-            viewer.input.camera.angleY -= THREE.Math.degToRad( (event.clientX - viewer.input.mouse.x) / 2 )
-            viewer.input.camera.angleX -= THREE.Math.degToRad(  (event.clientY - viewer.input.mouse.y) / 2 )
+            viewer.input.camera.angleY -= THREE.Math.degToRad( (event.clientX - viewer.input.mouse.x) / viewer.canvasSize.width * 360 )
+            viewer.input.camera.angleX -= THREE.Math.degToRad( (event.clientY - viewer.input.mouse.y) / viewer.canvasSize.height * 360 )
             viewer.input.camera.angleX = Math.min( Math.max( viewer.input.camera.angleX, -Math.PI / 2 ), Math.PI / 2 )
           
           viewer.input.mouse.x = event.clientX
