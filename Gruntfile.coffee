@@ -17,12 +17,28 @@ module.exports = (grunt) ->
     uglify:
       compile:
         files:
-          'build/three.js': [ 'bower_components/threejs/build/three.js' ]
+          'build/three.js': [
+            'bower_components/threejs/build/three.js'
+            'bower_components/threejs/examples/js/shaders/CopyShader.js'
+            'bower_components/threejs/examples/js/shaders/SSAOShader.js'
+            'bower_components/threejs/examples/js/postprocessing/EffectComposer.js'
+            'bower_components/threejs/examples/js/postprocessing/RenderPass.js'
+            'bower_components/threejs/examples/js/postprocessing/MaskPass.js'
+            'bower_components/threejs/examples/js/postprocessing/ShaderPass.js'
+          ]
           'build/craftstudio.js': [ 'build/tmp/craftstudio.js' ]
       beautify:
         options: { beautify: true, mangle: false, compress: false }
         files:
-          'build/three.js': [ 'bower_components/threejs/build/three.js' ]
+          'build/three.js': [
+            'bower_components/threejs/build/three.js'
+            'bower_components/threejs/examples/js/shaders/CopyShader.js'
+            'bower_components/threejs/examples/js/shaders/SSAOShader.js'
+            'bower_components/threejs/examples/js/postprocessing/EffectComposer.js'
+            'bower_components/threejs/examples/js/postprocessing/RenderPass.js'
+            'bower_components/threejs/examples/js/postprocessing/MaskPass.js'
+            'bower_components/threejs/examples/js/postprocessing/ShaderPass.js'
+          ]
           'build/craftstudio.js': [ 'build/tmp/craftstudio.js' ]
     watch:
       jade:

@@ -10,7 +10,7 @@ html
         html, body
           width 100%
           height 100%
-        
+
         body
           margin 0
           line-height 0
@@ -48,13 +48,40 @@ html
           camera: new THREE.PerspectiveCamera 45, 1, 1, 10000
           scene: new THREE.Scene()
           canvasSize: { width: 0, height: 0 }
+          bgColor: 0x000000
+          ssao: getQueryVariable('ssao') != 'false'
 
         bgColor = getQueryVariable('bgColor')
-        if bgColor?
-          viewer.renderer.setClearColor parseInt "0x#{bgColor}"
+        viewer.bgColor = parseInt "0x#{bgColor}" if bgColor?
+        viewer.renderer.setClearColor viewer.bgColor
+          
 
         ambient = new THREE.AmbientLight 0xffffff
         viewer.scene.add ambient
+
+        # SSAO
+        if viewer.ssao
+          depthShader = THREE.ShaderLib[ "depthRGBA" ]
+          depthUniforms = THREE.UniformsUtils.clone( depthShader.uniforms )
+          viewer.depthMaterial = new THREE.ShaderMaterial fragmentShader: depthShader.fragmentShader, vertexShader: depthShader.vertexShader, uniforms: depthUniforms
+          viewer.depthMaterial.blending = THREE.NoBlending
+          viewer.depthMaterial.side = THREE.DoubleSide
+        
+          viewer.depthTarget = new THREE.WebGLRenderTarget( viewer.canvasSize.width, viewer.canvasSize.height, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat } )
+        
+          viewer.composerEffect = new THREE.ShaderPass( THREE.SSAOShader )
+          viewer.composerEffect.uniforms[ 'tDepth' ].value = viewer.depthTarget
+          viewer.composerEffect.uniforms[ 'size' ].value.set( viewer.canvasSize.width, viewer.canvasSize.height )
+          viewer.composerEffect.uniforms[ 'cameraNear' ].value = 0.1
+          viewer.composerEffect.uniforms[ 'cameraFar' ].value = 5
+          viewer.composerEffect.uniforms[ 'aoClamp' ].value = 0.1
+          viewer.composerEffect.uniforms[ 'lumInfluence' ].value = 0.7
+          viewer.composerEffect.renderToScreen = true
+          
+          viewer.composerRenderTarget = new THREE.WebGLRenderTarget viewer.canvasSize.width, viewer.canvasSize.height, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat, stencilBuffer: false }
+          viewer.composer = new THREE.EffectComposer( viewer.renderer, viewer.composerRenderTarget )
+          viewer.composer.addPass new THREE.RenderPass( viewer.scene, viewer.camera )
+          viewer.composer.addPass viewer.composerEffect
 
         updateViewport = ->
           canvasSize = width: viewer.renderer.domElement.clientWidth, height: viewer.renderer.domElement.clientHeight
@@ -64,6 +91,14 @@ html
             viewer.renderer.setSize viewer.canvasSize.width, viewer.canvasSize.height
             viewer.camera.aspect = viewer.canvasSize.width / viewer.canvasSize.height
             viewer.camera.updateProjectionMatrix()
+
+            if viewer.ssao
+              viewer.composer.setSize viewer.canvasSize.width, viewer.canvasSize.height
+
+              viewer.depthTarget.dispose()
+              viewer.depthTarget = new THREE.WebGLRenderTarget viewer.canvasSize.width, viewer.canvasSize.height, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat }
+              viewer.composerEffect.uniforms[ 'tDepth' ].value = viewer.depthTarget
+              viewer.composerEffect.uniforms['size'].value.set viewer.canvasSize.width, viewer.canvasSize.height
 
           return
 
@@ -97,7 +132,16 @@ html
           updateViewport()
           handleInput()
           updateAnimation()
-          viewer.renderer.render viewer.scene, viewer.camera
+
+          if viewer.ssao
+            viewer.scene.overrideMaterial = viewer.depthMaterial
+            viewer.renderer.setClearColor 0xffffff
+            viewer.renderer.render viewer.scene, viewer.camera, viewer.depthTarget
+            viewer.scene.overrideMaterial = null
+            viewer.renderer.setClearColor viewer.bgColor
+            viewer.composer.render()
+          else
+            viewer.renderer.render viewer.scene, viewer.camera
 
         document.body.appendChild viewer.renderer.domElement
 
