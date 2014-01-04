@@ -10,9 +10,9 @@ class CraftStudio.ModelInstance
       transparent: model.transparent == true
       blending: THREE.NormalBlending
 
-    @resetPose()
+    @ResetPose()
 
-  dispose: ->
+  Dispose: ->
     @model = null
     @geometry.dipose()
     @geometry = null
@@ -20,10 +20,10 @@ class CraftStudio.ModelInstance
     @material = null
     return
 
-  resetPose: -> @setPose null, 0
+  ResetPose: -> @SetPose null, 0
 
   rootMatrix = new THREE.Matrix4()
-  setPose: (modelAnimation, frame) ->
+  SetPose: (modelAnimation, frame) ->
     boxIndex = 0
 
     for box in @model.rootBoxes
@@ -93,8 +93,8 @@ class CraftStudio.ModelInstance
 
   poseBoxRecurse = (geometry, boxIndex, box, parentMatrix, texture, modelAnimation, frame) ->
     if modelAnimation?
-      position = box.position.clone().add modelAnimation.getPositionDelta box.name, frame
-      orientation = new THREE.Quaternion().multiplyQuaternions modelAnimation.getOrientationDelta( box.name, frame ), box.orientation
+      position = box.position.clone().add modelAnimation.GetPositionDelta box.name, frame
+      orientation = new THREE.Quaternion().multiplyQuaternions modelAnimation.GetOrientationDelta( box.name, frame ), box.orientation
     else
       position = box.position
       orientation = box.orientation

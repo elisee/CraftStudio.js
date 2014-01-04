@@ -18,7 +18,7 @@ class CraftStudio.ModelAnimation
 
     return
 
-  getPositionDelta: (nodeName, frame) ->
+  GetPositionDelta: (nodeName, frame) ->
     nodeAnim = @nodeAnimations[nodeName]
     return new THREE.Vector3() if ! nodeAnim?
 
@@ -28,7 +28,7 @@ class CraftStudio.ModelAnimation
     factor = computeFrameInterpolationFactor keyframes.previous.frame, keyframes.next.frame, frame, @duration
     keyframes.previous.delta.clone().lerp keyframes.next.delta, factor
 
-  getOrientationDelta: (nodeName, frame) ->
+  GetOrientationDelta: (nodeName, frame) ->
     nodeAnim = @nodeAnimations[nodeName]
     return new THREE.Quaternion() if ! nodeAnim?
 

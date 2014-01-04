@@ -122,7 +122,7 @@ html
           return if ! viewer.animation?
 
           viewer.animationFrame = (viewer.animationFrame + 1) % viewer.animation.duration
-          viewer.modelInstance.setPose viewer.animation, viewer.animationFrame
+          viewer.modelInstance.SetPose viewer.animation, viewer.animationFrame
           return
 
         render = ->
