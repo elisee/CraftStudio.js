@@ -12,6 +12,14 @@ class CraftStudio.ModelInstance
 
     @resetPose()
 
+  dispose: ->
+    @model = null
+    @geometry.dipose()
+    @geometry = null
+    @material.dispose()
+    @material = null
+    return
+
   resetPose: -> @setPose null, 0
 
   rootMatrix = new THREE.Matrix4()
