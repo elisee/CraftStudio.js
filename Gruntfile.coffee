@@ -48,5 +48,5 @@ module.exports = (grunt) ->
         files: [ 'src/**/*.coffee' ]
         tasks: [ 'coffee', 'uglify:beautify' ]
   
-  grunt.registerTask 'default', [ 'jade', 'coffee', 'uglify' ]
+  grunt.registerTask 'default', [ 'jade', 'coffee', 'uglify:compile' ]
   grunt.registerTask 'dev', [ 'jade', 'coffee', 'uglify:beautify', 'watch' ]
