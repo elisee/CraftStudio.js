@@ -14,7 +14,7 @@ class CraftStudio.ModelInstance
 
   Dispose: ->
     @model = null
-    @geometry.dipose()
+    @geometry.dispose()
     @geometry = null
     @material.dispose()
     @material = null
