@@ -34,6 +34,34 @@ class CraftStudio.ModelInstance
     @geometry.attributes.uv.needsUpdate = true
     return
 
+  dummyScale = {}
+  GetBoxTransform: (boxName, modelAnimation, frame) ->
+    return null if ! @model?
+
+    transform = { position: new THREE.Vector3(), orientation: new THREE.Quaternion() }
+
+    box = @model.boxesByName[boxName]
+    return transform if ! box?
+
+    globalBoxMatrix = new THREE.Matrix4()
+
+    while box?
+      if modelAnimation?
+        position = box.position.clone().add modelAnimation.GetPositionDelta box.name, frame
+        orientation = new THREE.Quaternion().multiplyQuaternions modelAnimation.GetOrientationDelta( box.name, frame ), box.orientation
+      else
+        position = box.position
+        orientation = box.orientation
+
+      origin = box.offsetFromPivot.clone().applyQuaternion(orientation).add position
+      boxMatrix = new THREE.Matrix4().makeRotationFromQuaternion(orientation).setPosition origin
+      globalBoxMatrix.multiplyMatrices boxMatrix, globalBoxMatrix
+
+      box = box.parent
+
+    globalBoxMatrix.decompose transform.position, transform.orientation, dummyScale
+    transform
+
   createGeometry = (boxCount) ->
       geometry = new THREE.BufferGeometry()
       geometry.dynamic = true

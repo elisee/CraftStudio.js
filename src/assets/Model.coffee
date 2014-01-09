@@ -6,7 +6,7 @@ class CraftStudio.Model
     @rootBoxes.push( buildBox @, boxDef ) for boxDef in modelDef.tree
     @transparent = modelDef.transparent
 
-  buildBox = (model, boxDef) ->
+  buildBox = (model, boxDef, parentBox) ->
     box = model.boxesByName[ boxDef.name ] =
       name: boxDef.name
       position: new THREE.Vector3 boxDef.position[0], boxDef.position[1], boxDef.position[2]
@@ -14,6 +14,7 @@ class CraftStudio.Model
       offsetFromPivot: new THREE.Vector3 boxDef.offsetFromPivot[0], boxDef.offsetFromPivot[1], boxDef.offsetFromPivot[2]
       size: new THREE.Vector3 boxDef.size[0], boxDef.size[1], boxDef.size[2]
       texOffset: boxDef.texOffset
+      parent: parentBox
       children: []
 
     if boxDef.vertexCoords?
@@ -32,7 +33,7 @@ class CraftStudio.Model
 
     model.boxCount++
     for childBoxDef in boxDef.children
-      box.children.push buildBox model, childBoxDef
+      box.children.push buildBox model, childBoxDef, box
 
     box
 
