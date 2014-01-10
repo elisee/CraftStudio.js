@@ -6,6 +6,13 @@ class CraftStudio.Model
     @rootBoxes.push( buildBox @, boxDef ) for boxDef in modelDef.tree
     @transparent = modelDef.transparent
 
+  Dispose: ->
+    @texture.dispose()
+    @texture = null
+    @rootBoxes = null
+    @boxesByName = null
+    return
+
   buildBox = (model, boxDef, parentBox) ->
     box = model.boxesByName[ boxDef.name ] =
       name: boxDef.name

@@ -18,6 +18,10 @@ class CraftStudio.ModelAnimation
 
     return
 
+  Dispose: ->
+    @nodeAnimations = null
+    return
+
   GetPositionDelta: (nodeName, frame) ->
     nodeAnim = @nodeAnimations[nodeName]
     return new THREE.Vector3() if ! nodeAnim?
